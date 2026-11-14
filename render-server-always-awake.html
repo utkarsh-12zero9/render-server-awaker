@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f8fc" />
+  <title>Pingloop — API Monitor</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #242d3b;
+      background: #f6f8fc;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --ink: #242d3b;
+      --muted: #818a98;
+      --line: #e7eaf0;
+      --blue: #3978d4;
+      --green: #28a765;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+    }
+
+    .shell {
+      width: min(100% - 36px, 850px);
+      margin: 0 auto;
+      padding-bottom: 32px;
+    }
+
+    header {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: white;
+      background: var(--blue);
+    }
+
+    .run-state {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #a7adb9;
+    }
+
+    .run-state.running .dot {
+      background: var(--green);
+      box-shadow: 0 0 0 3px #e2f5eb;
+    }
+
+    .hero {
+      padding: 62px 0 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 1.5px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(38px, 7vw, 55px);
+      line-height: 1.06;
+      letter-spacing: -2.7px;
+    }
+
+    h1 span {
+      color: var(--blue);
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 44px;
+    }
+
+    .stat,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+    }
+
+    .stat {
+      min-height: 82px;
+      padding: 14px 17px;
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 1px;
+    }
+
+    .stat strong {
+      font-size: 24px;
+      letter-spacing: -0.8px;
+    }
+
+    .stat small {
+      color: #9299a5;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #a9c8f4;
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+    }
+
+    .primary {
+      color: white;
+      background: var(--blue);
+    }
+
+    .secondary {
+      color: #515c6d;
+      border-color: var(--line);
+      background: white;
+    }
+
+    .panel {
+      overflow: hidden;
+    }
+
+    .service {
+      min-height: 75px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 13px 16px;
+    }
+
+    .service+.service {
+      border-top: 1px solid #eef0f3;
+    }
+
+    .service-icon {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: #697589;
+      background: #f0f3f7;
+      font-weight: 700;
+    }
+
+    .service-icon.online {
+      color: #18864d;
+      background: #e9f7ef;
+    }
+
+    .service-icon.error {
+      color: #ba4545;
+      background: #fff0ef;
+    }
+
+    .service-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .service-name {
+      overflow: hidden;
+      margin: 0 0 4px;
+      font-size: 13px;
+      font-weight: 670;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .service-url {
+      display: block;
+      overflow: hidden;
+      color: #858d9a;
+      font-size: 11px;
+      text-decoration: none;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .service-url:hover {
+      color: var(--blue);
+    }
+
+    .result {
+      width: 220px;
+      flex: 0 0 auto;
+    }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #808897;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .result-status.online {
+      color: #21834f;
+    }
+
+    .result-status.online .dot {
+      background: var(--green);
+    }
+
+    .result-status.error {
+      color: #bc4e4e;
+    }
+
+    .result-status.error .dot {
+      background: #d86b68;
+    }
+
+    .result-status.checking .dot {
+      background: #e3a534;
+      animation: pulse 1s infinite alternate;
+    }
+
+    .detail {
+      overflow: hidden;
+      margin-top: 5px;
+      color: #9aa1ad;
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty {
+      padding: 30px 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty strong {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .empty code {
+      color: #43536b;
+      background: #f1f4f9;
+    }
+
+    .notice {
+      margin-top: 16px;
+      padding: 13px 15px;
+      border: 1px solid #e6edf7;
+      border-radius: 8px;
+      color: #78879b;
+      background: #f7faff;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .notice strong {
+      color: #52657f;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 24px;
+      color: #9aa1ad;
+      font-size: 10px;
+    }
+
+    @keyframes pulse {
+      to {
+        opacity: .38;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .hero {
+        padding-top: 48px;
+      }
+
+      .stats {
+        gap: 8px;
+        margin-bottom: 35px;
+      }
+
+      .stat {
+        padding: 12px 10px;
+      }
+
+      .stat-label {
+        font-size: 8px;
+        letter-spacing: .5px;
+      }
+
+      .stat strong {
+        font-size: 21px;
+      }
+
+      .section-heading {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .service {
+        flex-wrap: wrap;
+        gap: 9px;
+        padding: 12px;
+      }
+
+      .service-main {
+        width: calc(100% - 50px);
+      }
+
+      .result {
+        width: auto;
+        flex: 1;
+        margin-left: 45px;
+      }
+
+      footer {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark">P</span><span>pingloop</span></div>
+      <div id="run-state" class="run-state"><span class="dot"></span><span id="run-label">Monitor paused</span></div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">YOUR PROJECTS, ON STANDBY</p>
+      <h1>Keep your services<br /><span>wide awake.</span></h1>
+      <p class="subtitle">Send a GET request to each hosted project every 10 minutes.</p>
+    </section>
+
+    <section class="stats" aria-label="Monitor summary">
+      <div class="stat"><span class="stat-label">PROJECTS</span><strong id="project-count">00</strong></div>
+      <div class="stat"><span class="stat-label">RESPONDING</span><strong><span id="online-count">00</span><small> /
+            <span id="total-count">00</span></small></strong></div>
+      <div class="stat"><span class="stat-label">PING INTERVAL</span><strong>10 <small>MIN</small></strong></div>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">MONITORING</p>
+          <h2>Your services</h2>
+        </div>
+        <div class="actions">
+          <button id="ping-now" class="secondary" type="button">Ping now</button>
+          <button id="toggle-monitor" class="primary" type="button">Start monitor</button>
+        </div>
+      </div>
+      <div id="service-list" class="panel" aria-live="polite"></div>
+    </section>
+
+    <aside class="notice">
+      <strong>Keep this page open</strong> while monitoring. Browsers can throttle background timers or pause them when
+      your device sleeps. Cross-origin APIs must allow browser requests (CORS). For reliable always-on checks, use a
+      server-side scheduler.
+    </aside>
+
+    <footer><span>Pingloop · Simple uptime nudges</span><span>Requests run from your browser</span></footer>
+  </main>
+
+  <script>
+    // Add your GET endpoints here. The monitor calls each URL immediately, then every 10 minutes.
+    const API_ENDPOINTS = [
+      { name: 'Busy Mess', url: 'https://khareedbech-backend.onrender.com/api/health' },
+      { name: 'Kisan Setu', url: 'https://krishi-setu-backend.onrender.com/api/health' },
+    ]
+
+    const INTERVAL_MS = 10 * 60 * 1000
+    const REQUEST_TIMEOUT_MS = 20 * 1000
+    const projects = API_ENDPOINTS.map((endpoint) => ({
+      ...endpoint,
+      status: 'idle',
+      lastChecked: null,
+      responseTime: null,
+      message: '',
+    }))
+    const inFlight = new Set()
+    let intervalId = null
+
+    const serviceList = document.querySelector('#service-list')
+    const runState = document.querySelector('#run-state')
+    const runLabel = document.querySelector('#run-label')
+    const toggleButton = document.querySelector('#toggle-monitor')
+
+    function render() {
+      document.querySelector('#project-count').textContent = String(projects.length).padStart(2, '0')
+      document.querySelector('#total-count').textContent = String(projects.length).padStart(2, '0')
+      document.querySelector('#online-count').textContent = String(
+        projects.filter((project) => project.status === 'online').length,
+      ).padStart(2, '0')
+
+      serviceList.replaceChildren()
+      if (projects.length === 0) {
+        const empty = document.createElement('div')
+        empty.className = 'empty'
+        const title = document.createElement('strong')
+        title.textContent = 'No API endpoints configured'
+        const message = document.createElement('span')
+        message.append('Add your GET URLs to the ')
+        const code = document.createElement('code')
+        code.textContent = 'API_ENDPOINTS'
+        message.append(code, ' array in this HTML file.')
+        empty.append(title, message)
+        serviceList.append(empty)
+        return
+      }
+
+      for (const project of projects) {
+        const row = document.createElement('article')
+        row.className = 'service'
+
+        const icon = document.createElement('span')
+        icon.className = `service-icon ${project.status}`
+        icon.setAttribute('aria-hidden', 'true')
+        icon.textContent = project.status === 'online' ? '✓' : project.status === 'error' ? '!' : '↗'
+
+        const main = document.createElement('div')
+        main.className = 'service-main'
+        const name = document.createElement('h3')
+        name.className = 'service-name'
+        name.textContent = project.name
+        const link = document.createElement('a')
+        link.className = 'service-url'
+        link.textContent = project.url
+        link.href = project.url
+        link.target = '_blank'
+        link.rel = 'noreferrer'
+        main.append(name, link)
+
+        const result = document.createElement('div')
+        result.className = 'result'
+        const status = document.createElement('div')
+        status.className = `result-status ${project.status}`
+        const dot = document.createElement('span')
+        dot.className = 'dot'
+        const statusText = document.createElement('span')
+        statusText.textContent = {
+          idle: 'Not checked',
+          checking: 'Checking',
+          online: 'Responding',
+          error: 'No response',
+        }[project.status]
+        status.append(dot, statusText)
+
+        const detail = document.createElement('div')
+        detail.className = 'detail'
+        detail.textContent = project.status === 'checking'
+          ? 'Request in progress'
+          : project.lastChecked
+            ? `${project.message} · ${project.responseTime} ms · ${new Date(project.lastChecked).toLocaleTimeString()}`
+            : 'Waiting for first ping'
+        result.append(status, detail)
+        row.append(icon, main, result)
+        serviceList.append(row)
+      }
+    }
+
+    async function pingProject(project) {
+      if (inFlight.has(project.url)) return
+      inFlight.add(project.url)
+      project.status = 'checking'
+      project.message = ''
+      render()
+      const startedAt = Date.now()
+      const controller = new AbortController()
+      const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+      try {
+        const response = await fetch(project.url, {
+          method: 'GET',
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        project.status = response.ok ? 'online' : 'error'
+        project.message = `HTTP ${response.status}`
+        project.responseTime = Date.now() - startedAt
+        project.lastChecked = new Date().toISOString()
+      } catch (error) {
+        project.status = 'error'
+        project.message = error.name === 'AbortError'
+          ? 'Request timed out'
+          : 'Request failed (network or CORS restriction)'
+        project.responseTime = Date.now() - startedAt
+        project.lastChecked = new Date().toISOString()
+      } finally {
+        window.clearTimeout(timeoutId)
+        inFlight.delete(project.url)
+        render()
+      }
+    }
+
+    function pingAll() {
+      projects.forEach((project) => { void pingProject(project) })
+    }
+
+    function startMonitor() {
+      if (intervalId !== null || projects.length === 0) return
+      runState.classList.add('running')
+      runLabel.textContent = 'Monitor running'
+      toggleButton.textContent = 'Pause monitor'
+      pingAll()
+      intervalId = window.setInterval(pingAll, INTERVAL_MS)
+    }
+
+    function pauseMonitor() {
+      if (intervalId !== null) window.clearInterval(intervalId)
+      intervalId = null
+      runState.classList.remove('running')
+      runLabel.textContent = 'Monitor paused'
+      toggleButton.textContent = 'Start monitor'
+    }
+
+    toggleButton.addEventListener('click', () => {
+      if (intervalId === null) startMonitor()
+      else pauseMonitor()
+    })
+    document.querySelector('#ping-now').addEventListener('click', pingAll)
+
+    render()
+    toggleButton.disabled = projects.length === 0
+    document.querySelector('#ping-now').disabled = projects.length === 0
+    if (projects.length > 0) startMonitor()
+  </script>
+</body>
+
+</html>
